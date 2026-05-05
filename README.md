@@ -18,32 +18,66 @@ A scalable, full-stack Retrieval-Augmented Generation (RAG) AI platform. This ap
 ## 🏗️ System Architecture
 
 ```mermaid
-graph TD
-    %% Styling
-    classDef frontend fill:#61dafb,stroke:#333,stroke-width:2px,color:#000;
-    classDef java fill:#b07219,stroke:#333,stroke-width:2px,color:#fff;
-    classDef python fill:#3776ab,stroke:#333,stroke-width:2px,color:#fff;
-    classDef db fill:#4479A1,stroke:#333,stroke-width:2px,color:#fff;
-    classDef ai fill:#ea4335,stroke:#333,stroke-width:2px,color:#fff;
+graph TB
+    %% Styling Definitions
+    classDef frontend fill:#20232a,stroke:#61dafb,stroke-width:2px,color:#61dafb;
+    classDef java fill:#f89820,stroke:#5382a1,stroke-width:2px,color:#fff;
+    classDef python fill:#306998,stroke:#ffe873,stroke-width:2px,color:#fff;
+    classDef db fill:#00758f,stroke:#f29111,stroke-width:2px,color:#fff;
+    classDef ai fill:#ea4335,stroke:#4285f4,stroke-width:2px,color:#fff;
 
-    %% Nodes
-    UI[React.js Frontend]:::frontend
-    SB[Spring Boot Controller]:::java
-    MySQL[(MySQL Database)]:::db
-    FastAPI[FastAPI Python Engine]:::python
-    Chroma[(ChromaDB Vector Store)]:::db
-    Gemini[Google Gemini 2.5 Flash]:::ai
+    %% --- 1. FRONTEND LAYER ---
+    subgraph Client [React Frontend UI - Port 4000]
+        UI[User Interface]:::frontend
+        API_SVC[API Service Layer]:::frontend
+        UI <--> API_SVC
+    end
 
-    %% Connections
-    UI -- "JSON & Multipart Files (Port 4000)" --> SB
-    SB -- "JPA Entities" --> MySQL
-    SB -- "HTTP REST Forwarding (Port 6003)" --> FastAPI
-    
-    FastAPI -- "Document Chunking & Embeddings" --> Chroma
-    Chroma -- "Semantic Search Retrieval" --> FastAPI
-    
-    FastAPI -- "Augmented Prompt" --> Gemini
-    Gemini -- "Final Synthesized Output" --> FastAPI
+    %% --- 2. BACKEND LAYER ---
+    subgraph SpringBoot [Spring Boot Gateway - Port 6003]
+        REST_CHAT[Chat Controller]:::java
+        REST_DOC[Document Controller]:::java
+        JPA[Spring Data JPA]:::java
+        REST_CHAT <--> JPA
+    end
+
+    %% --- 3. DATABASE LAYER ---
+    subgraph Database [Persistence Layer]
+        MySQL[(MySQL : chat_interactions)]:::db
+    end
+
+    %% --- 4. AI MICROSERVICE LAYER ---
+    subgraph FastAPI [Python GenAI Engine - Port 8000]
+        direction TB
+        ROUTE_CHAT[POST /api/ai/chat]:::python
+        ROUTE_UP[POST /api/ai/upload]:::python
+        
+        %% RAG Components
+        SPLITTER[Recursive Text Splitter]:::python
+        EMBED[Google Embeddings Model]:::python
+        CHROMA[(Chroma Vector DB)]:::db
+        LANGCHAIN[LangChain Orchestrator]:::python
+
+        ROUTE_UP --> SPLITTER
+        SPLITTER --> EMBED
+        EMBED --> CHROMA
+        
+        ROUTE_CHAT --> LANGCHAIN
+        LANGCHAIN <--> |Semantic Search| CHROMA
+    end
+
+    %% --- 5. EXTERNAL APIs ---
+    subgraph External [Google Cloud]
+        GEMINI[Gemini 2.5 Flash LLM]:::ai
+    end
+
+    %% --- NETWORK CONNECTIONS ---
+    API_SVC -- "JSON Prompt" --> REST_CHAT
+    API_SVC -- "Multipart File (.pdf)" --> REST_DOC
+    JPA <--> |"Save & Load History"| MySQL
+    REST_DOC -- "Forward File Payload" --> ROUTE_UP
+    REST_CHAT -- "Forward User Prompt" --> ROUTE_CHAT
+    LANGCHAIN <--> |"Augmented Prompt & Context"| GEMINI
 
 
 🚀 How It Works
