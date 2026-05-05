@@ -78,7 +78,7 @@ graph TB
     REST_DOC -- "Forward File Payload" --> ROUTE_UP
     REST_CHAT -- "Forward User Prompt" --> ROUTE_CHAT
     LANGCHAIN <--> |"Augmented Prompt & Context"| GEMINI
-
+  
 
 🚀 How It Works
 The Bridge: The React frontend securely passes user prompts and uploaded documents to the Spring Boot backend.
