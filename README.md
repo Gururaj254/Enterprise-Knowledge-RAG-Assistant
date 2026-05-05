@@ -18,49 +18,59 @@ A scalable, full-stack Retrieval-Augmented Generation (RAG) AI platform. This ap
 ## 🏗️ System Architecture
 
 ```mermaid
-graph TB
+    graph TD
     classDef frontend fill:#20232a,stroke:#61dafb,stroke-width:2px,color:#61dafb;
     classDef java fill:#f89820,stroke:#5382a1,stroke-width:2px,color:#fff;
     classDef python fill:#306998,stroke:#ffe873,stroke-width:2px,color:#fff;
     classDef db fill:#00758f,stroke:#f29111,stroke-width:2px,color:#fff;
     classDef ai fill:#ea4335,stroke:#4285f4,stroke-width:2px,color:#fff;
 
-    subgraph Client [React Frontend UI - Port 4000]
+    subgraph Client [React Frontend]
         UI[User Interface]:::frontend
-        API_SVC[API Service Layer]:::frontend
-        UI --> API_SVC
-        API_SVC --> UI
+        API_SVC[API Service]:::frontend
     end
 
-    subgraph SpringBoot [Spring Boot Gateway - Port 6003]
+    subgraph SpringBoot [Spring Boot Gateway]
         REST_CHAT[Chat Controller]:::java
         REST_DOC[Document Controller]:::java
         JPA[Spring Data JPA]:::java
-        REST_CHAT --> JPA
     end
 
-    subgraph Database [Persistence Layer]
-        MySQL[(MySQL DB)]:::db
+    subgraph Database [MySQL Layer]
+        MySQL[(chat_interactions)]:::db
     end
 
-    subgraph FastAPI [Python GenAI Engine - Port 8000]
-        direction TB
-        ROUTE_CHAT[POST /api/ai/chat]:::python
-        ROUTE_UP[POST /api/ai/upload]:::python
-        
+    subgraph FastAPI [Python AI Engine]
+        ROUTE_CHAT[Chat Endpoint]:::python
+        ROUTE_UP[Upload Endpoint]:::python
         SPLITTER[Text Splitter]:::python
         EMBED[Embeddings Model]:::python
         CHROMA[(Chroma Vector DB)]:::db
-        LANGCHAIN[LangChain Orchestrator]:::python
-
-        ROUTE_UP --> SPLITTER
-        SPLITTER --> EMBED
-        EMBED --> CHROMA
-        
-        ROUTE_CHAT --> LANGCHAIN
-        LANGCHAIN --> CHROMA
-        CHROMA --> LANGCHAIN
+        LANGCHAIN[LangChain]:::python
     end
+
+    subgraph External [Google Cloud]
+        GEMINI[Gemini 2.5 Flash]:::ai
+    end
+
+    UI --> API_SVC
+    
+    API_SVC -->|Prompt| REST_CHAT
+    API_SVC -->|File| REST_DOC
+    
+    REST_CHAT --> JPA
+    JPA -->|Save & Load| MySQL
+    
+    REST_DOC -->|Forward File| ROUTE_UP
+    REST_CHAT -->|Forward Prompt| ROUTE_CHAT
+    
+    ROUTE_UP --> SPLITTER
+    SPLITTER --> EMBED
+    EMBED --> CHROMA
+    
+    ROUTE_CHAT --> LANGCHAIN
+    LANGCHAIN -->|Semantic Search| CHROMA
+    LANGCHAIN -->|Prompt + Context| GEMINI
 
     subgraph External [Google Cloud]
         GEMINI[Gemini 2.5 Flash]:::ai
