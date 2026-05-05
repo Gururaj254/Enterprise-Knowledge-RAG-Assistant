@@ -19,42 +19,37 @@ A scalable, full-stack Retrieval-Augmented Generation (RAG) AI platform. This ap
 
 ```mermaid
 graph TB
-    %% Styling Definitions
     classDef frontend fill:#20232a,stroke:#61dafb,stroke-width:2px,color:#61dafb;
     classDef java fill:#f89820,stroke:#5382a1,stroke-width:2px,color:#fff;
     classDef python fill:#306998,stroke:#ffe873,stroke-width:2px,color:#fff;
     classDef db fill:#00758f,stroke:#f29111,stroke-width:2px,color:#fff;
     classDef ai fill:#ea4335,stroke:#4285f4,stroke-width:2px,color:#fff;
 
-    %% --- 1. FRONTEND LAYER ---
     subgraph Client [React Frontend UI - Port 4000]
         UI[User Interface]:::frontend
         API_SVC[API Service Layer]:::frontend
-        UI <--> API_SVC
+        UI --> API_SVC
+        API_SVC --> UI
     end
 
-    %% --- 2. BACKEND LAYER ---
     subgraph SpringBoot [Spring Boot Gateway - Port 6003]
         REST_CHAT[Chat Controller]:::java
         REST_DOC[Document Controller]:::java
         JPA[Spring Data JPA]:::java
-        REST_CHAT <--> JPA
+        REST_CHAT --> JPA
     end
 
-    %% --- 3. DATABASE LAYER ---
     subgraph Database [Persistence Layer]
-        MySQL[(MySQL : chat_interactions)]:::db
+        MySQL[(MySQL DB)]:::db
     end
 
-    %% --- 4. AI MICROSERVICE LAYER ---
     subgraph FastAPI [Python GenAI Engine - Port 8000]
         direction TB
         ROUTE_CHAT[POST /api/ai/chat]:::python
         ROUTE_UP[POST /api/ai/upload]:::python
         
-        %% RAG Components
-        SPLITTER[Recursive Text Splitter]:::python
-        EMBED[Google Embeddings Model]:::python
+        SPLITTER[Text Splitter]:::python
+        EMBED[Embeddings Model]:::python
         CHROMA[(Chroma Vector DB)]:::db
         LANGCHAIN[LangChain Orchestrator]:::python
 
@@ -63,24 +58,25 @@ graph TB
         EMBED --> CHROMA
         
         ROUTE_CHAT --> LANGCHAIN
-        LANGCHAIN <--> |Semantic Search| CHROMA
+        LANGCHAIN --> CHROMA
+        CHROMA --> LANGCHAIN
     end
 
-    %% --- 5. EXTERNAL APIs ---
     subgraph External [Google Cloud]
-        GEMINI[Gemini 2.5 Flash LLM]:::ai
+        GEMINI[Gemini 2.5 Flash]:::ai
     end
 
-    %% --- NETWORK CONNECTIONS ---
-    API_SVC -- "JSON Prompt" --> REST_CHAT
-    API_SVC -- "Multipart File (.pdf)" --> REST_DOC
-    JPA <--> |"Save & Load History"| MySQL
-    REST_DOC -- "Forward File Payload" --> ROUTE_UP
-    REST_CHAT -- "Forward User Prompt" --> ROUTE_CHAT
-    LANGCHAIN <--> |"Augmented Prompt & Context"| GEMINI
-  
-
-🚀 How It Works
+    API_SVC -->|"User Prompt"| REST_CHAT
+    API_SVC -->|"File Upload"| REST_DOC
+    
+    JPA -->|"Save Data"| MySQL
+    MySQL -->|"Load Data"| JPA
+    
+    REST_DOC -->|"File Payload"| ROUTE_UP
+    REST_CHAT -->|"Forward Prompt"| ROUTE_CHAT
+    
+    LANGCHAIN -->|"Context Input"| GEMINI
+    GEMINI -->|"AI Response"| LANGCHAIN🚀 How It Works
 The Bridge: The React frontend securely passes user prompts and uploaded documents to the Spring Boot backend.
 
 Persistence: Spring Boot logs the transaction into MySQL for historical record-keeping and forwards the payload to the Python microservice.
@@ -131,4 +127,4 @@ npm start
 👨‍💻 Author
 Gururaj Dharmashetti
 
-Full Stack Developer | Java | Spring Boot | React | Generative AI
+Full Stack AI Developer | Java | Spring Boot | React | Generative AI
