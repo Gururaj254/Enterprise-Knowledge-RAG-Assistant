@@ -16,77 +16,21 @@ A scalable, full-stack Retrieval-Augmented Generation (RAG) AI platform. This ap
 * **LLM & Orchestration:** Google Gemini 2.5 Flash, LangChain, Chroma Vector Database
 
 ## 🏗️ System Architecture
+[ React Frontend UI ]
+         |
+         | (Sends Prompt & File)
+         v
+[ Spring Boot Gateway ]  <------>  [ MySQL Database ]
+         |
+         | (Forwards Payload)
+         v
+[ Python FastAPI Engine ] <----->  [ Chroma Vector DB ]
+         |
+         | (Sends Context)
+         v
+[ Google Gemini 2.5 LLM ]
 
-```mermaid
-    graph TD
-    classDef frontend fill:#20232a,stroke:#61dafb,stroke-width:2px,color:#61dafb;
-    classDef java fill:#f89820,stroke:#5382a1,stroke-width:2px,color:#fff;
-    classDef python fill:#306998,stroke:#ffe873,stroke-width:2px,color:#fff;
-    classDef db fill:#00758f,stroke:#f29111,stroke-width:2px,color:#fff;
-    classDef ai fill:#ea4335,stroke:#4285f4,stroke-width:2px,color:#fff;
-
-    subgraph Client [React Frontend]
-        UI[User Interface]:::frontend
-        API_SVC[API Service]:::frontend
-    end
-
-    subgraph SpringBoot [Spring Boot Gateway]
-        REST_CHAT[Chat Controller]:::java
-        REST_DOC[Document Controller]:::java
-        JPA[Spring Data JPA]:::java
-    end
-
-    subgraph Database [MySQL Layer]
-        MySQL[(chat_interactions)]:::db
-    end
-
-    subgraph FastAPI [Python AI Engine]
-        ROUTE_CHAT[Chat Endpoint]:::python
-        ROUTE_UP[Upload Endpoint]:::python
-        SPLITTER[Text Splitter]:::python
-        EMBED[Embeddings Model]:::python
-        CHROMA[(Chroma Vector DB)]:::db
-        LANGCHAIN[LangChain]:::python
-    end
-
-    subgraph External [Google Cloud]
-        GEMINI[Gemini 2.5 Flash]:::ai
-    end
-
-    UI --> API_SVC
-    
-    API_SVC -->|Prompt| REST_CHAT
-    API_SVC -->|File| REST_DOC
-    
-    REST_CHAT --> JPA
-    JPA -->|Save & Load| MySQL
-    
-    REST_DOC -->|Forward File| ROUTE_UP
-    REST_CHAT -->|Forward Prompt| ROUTE_CHAT
-    
-    ROUTE_UP --> SPLITTER
-    SPLITTER --> EMBED
-    EMBED --> CHROMA
-    
-    ROUTE_CHAT --> LANGCHAIN
-    LANGCHAIN -->|Semantic Search| CHROMA
-    LANGCHAIN -->|Prompt + Context| GEMINI
-
-    subgraph External [Google Cloud]
-        GEMINI[Gemini 2.5 Flash]:::ai
-    end
-
-    API_SVC -->|"User Prompt"| REST_CHAT
-    API_SVC -->|"File Upload"| REST_DOC
-    
-    JPA -->|"Save Data"| MySQL
-    MySQL -->|"Load Data"| JPA
-    
-    REST_DOC -->|"File Payload"| ROUTE_UP
-    REST_CHAT -->|"Forward Prompt"| ROUTE_CHAT
-    
-    LANGCHAIN -->|"Context Input"| GEMINI
-    GEMINI -->|"AI Response"| LANGCHAIN🚀 How It Works
+🚀 How It Works
 The Bridge: The React frontend securely passes user prompts and uploaded documents to the Spring Boot backend.
 
 Persistence: Spring Boot logs the transaction into MySQL for historical record-keeping and forwards the payload to the Python microservice.
