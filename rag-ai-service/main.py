@@ -12,6 +12,7 @@ load_dotenv()
 
 app = FastAPI()
 
+
 class ChatRequest(BaseModel):
     question: str
 
